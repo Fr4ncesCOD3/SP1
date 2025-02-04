@@ -4,25 +4,104 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.example.demo.model.Drink;
 import com.example.demo.model.Menu;
 import com.example.demo.model.MenuItem;
+import com.example.demo.model.Order;
 import com.example.demo.model.Pizza;
+import com.example.demo.model.Table;
+import com.example.demo.model.TableStatus;
 import com.example.demo.model.Topping;
 
 @Service
 public class OrderService {
     private final Menu menu;
     private final Scanner scanner;
+    private final List<Table> tables;
+    private final double coverCharge;
 
-    public OrderService(Menu menu) {
+    public OrderService(Menu menu, List<Table> tables, @Value("${restaurant.cover.charge}") double coverCharge) {
         this.menu = menu;
         this.scanner = new Scanner(System.in);
+        this.tables = tables;
+        this.coverCharge = coverCharge;
     }
 
-    public void startOrder() {
+    public void start() {
+        while (true) {
+            System.out.println("\n=== SISTEMA ORDINI RISTORANTE ===");
+            System.out.println("1. Ordine al tavolo");
+            System.out.println("2. Ordine delivery");
+            System.out.println("3. Esci");
+            System.out.print("Seleziona un'opzione: ");
+            
+            String choice = scanner.nextLine();
+            
+            switch (choice) {
+                case "1":
+                    handleTableOrder();
+                    break;
+                case "2":
+                    handleDeliveryOrder();
+                    break;
+                case "3":
+                    return;
+                default:
+                    System.out.println("Opzione non valida!");
+            }
+        }
+    }
+
+    private void handleTableOrder() {
+        // Mostra stato dei tavoli
+        System.out.println("\n=== STATO DEI TAVOLI ===");
+        System.out.println("Tavoli liberi:");
+        tables.stream()
+              .filter(t -> t.getStatus() == TableStatus.FREE)
+              .forEach(System.out::println);
+              
+        System.out.println("\nTavoli occupati:");
+        tables.stream()
+              .filter(t -> t.getStatus() == TableStatus.OCCUPIED)
+              .forEach(System.out::println);
+
+        // Selezione tavolo
+        System.out.print("\nInserisci il numero del tavolo (0 per annullare): ");
+        int tableNumber = Integer.parseInt(scanner.nextLine());
+        
+        if (tableNumber == 0) return;
+
+        Table selectedTable = tables.stream()
+                                  .filter(t -> t.getNumber() == tableNumber && t.getStatus() == TableStatus.FREE)
+                                  .findFirst()
+                                  .orElse(null);
+
+        if (selectedTable == null) {
+            System.out.println("Tavolo non disponibile!");
+            return;
+        }
+
+        System.out.print("Inserisci il numero di coperti: ");
+        int covers = Integer.parseInt(scanner.nextLine());
+
+        if (covers > selectedTable.getMaxSeats()) {
+            System.out.println("Numero di coperti superiore alla capacità del tavolo!");
+            return;
+        }
+
+        Order order = new Order(selectedTable, covers, coverCharge);
+        processOrder(order);
+    }
+
+    private void handleDeliveryOrder() {
+        Order order = new Order(null, 0, 0); // Per delivery non ci sono coperti
+        processOrder(order);
+    }
+
+    private void processOrder(Order order) {
         List<MenuItem> orderItems = new ArrayList<>();
         double totalPrice = 0;
 
@@ -98,14 +177,10 @@ public class OrderService {
             System.out.println("Aggiunta pizza: " + orderedPizza);
         }
 
+        // Aggiungi tutti gli items all'ordine
+        orderItems.forEach(order::addItem);
+
         // Stampa riepilogo ordine
-        if (!orderItems.isEmpty()) {
-            System.out.println("\n=== RIEPILOGO ORDINE ===");
-            System.out.println("\nPIZZE E BEVANDE ORDINATE:");
-            orderItems.forEach(item -> System.out.println("- " + item));
-            System.out.printf("\nTotale ordine: €%.2f%n", totalPrice);
-        } else {
-            System.out.println("\nNessun item ordinato.");
-        }
+        System.out.println("\n" + order.toString());
     }
 } 
