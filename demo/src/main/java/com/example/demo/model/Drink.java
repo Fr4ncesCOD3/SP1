@@ -1,10 +1,28 @@
 // Questo è il package dove si trova la classe
 package com.example.demo.model;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+
 // Classe Drink che estende MenuItem - rappresenta una bevanda nel menu
+@Entity
+@Table(name = "drinks")
 public class Drink extends MenuItem {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
     // Dimensione della bevanda in millilitri
+    @Column
     private double size; // in ml
+
+    // Costruttore vuoto richiesto da JPA/Hibernate
+    public Drink() {
+        super();
+    }
 
     // Costruttore che inizializza una nuova bevanda
     // Parametri:

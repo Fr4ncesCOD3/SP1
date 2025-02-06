@@ -5,22 +5,41 @@ package com.example.demo.model;
 import java.util.ArrayList;
 import java.util.List;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.Table;
+
 // Classe Pizza che estende MenuItem - rappresenta una pizza nel menu
+@Entity
+@Table(name = "pizzas")
 public class Pizza extends MenuItem {
-    // Lista dei condimenti aggiunti alla pizza
-    private List<Topping> toppings;
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+        name = "pizza_toppings",
+        joinColumns = @JoinColumn(name = "pizza_id"),
+        inverseJoinColumns = @JoinColumn(name = "topping_id")
+    )
+    private List<Topping> toppings = new ArrayList<>();
     // Flag che indica se la pizza è formato XL
+    @Column
     private boolean isXL;
     // Moltiplicatori per calcolare prezzo e calorie della versione XL
     private static final double XL_PRICE_MULTIPLIER = 1.5;    // Prezzo aumentato del 50%
     private static final double XL_CALORIES_MULTIPLIER = 1.8; // Calorie aumentate dell'80%
 
+    // Costruttore vuoto richiesto da JPA/Hibernate
+    public Pizza() {
+        super();  // Chiama il costruttore vuoto della classe padre
+    }
+
     // Costruttore: crea una nuova pizza con nome, prezzo e calorie base
     public Pizza(String name, double price, int calories) {
         // Chiama il costruttore della classe padre (MenuItem)
         super(name, price, calories);
-        // Inizializza la lista dei condimenti vuota
-        this.toppings = new ArrayList<>();
         // Inizialmente la pizza non è XL
         this.isXL = false;
     }
